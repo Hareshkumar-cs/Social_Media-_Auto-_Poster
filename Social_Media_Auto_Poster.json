@@ -1,0 +1,702 @@
+{
+  "name": "Social Media Auto Poster",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "0a8ed1dd-32c0-45f4-a5ce-e20df2c306d9",
+      "name": "Schedule Trigger (every 15 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1792,
+        160
+      ],
+      "notes": "Wakes n8n up every 15 minutes to check the sheet for due posts. Adjust the interval for tighter/looser posting precision."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-instagram",
+                    "leftValue": "={{ $json.fields.Platform }}",
+                    "rightValue": "Instagram",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-facebook",
+                    "leftValue": "={{ $json.fields.Platform }}",
+                    "rightValue": "Facebook",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rule-linkedin",
+                    "leftValue": "={{ $json.fields.Platform }}",
+                    "rightValue": "LinkedIn",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "ad763cb1-d66e-4728-9e8f-c4ad825535e0",
+      "name": "Route By Platform",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -592,
+        128
+      ],
+      "notes": "Splits each row into a different branch depending on its Platform column value."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"mutation CreatePost($channelId: ChannelId!, $text: String!, $assets: [AssetInput!]!) { createPost(input: { channelId: $channelId, text: $text, assets: $assets, mode: shareNow, needsApproval: false, schedulingType: automatic, metadata: { instagram: { type: post, shouldShareToFeed: true } } }) { __typename } }\",\n  \"variables\": {\n    \"channelId\": \"YOUR_INSTAGRAM_CHANNEL_ID\",\n    \"text\": \"{{ $json.fields.Caption }}\",\n    \"assets\": [\n      { \"image\": { \"url\": \"{{ $json.fields['Image URL'] }}\" } }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "id": "68969ddc-ecde-46ef-9136-15b41517a395",
+      "name": "Post to Instagram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -304,
+        -32
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      },
+      "notes": "Placeholder raw HTTP call. In a real build, swap for the community node n8n-nodes-meta-publisher, or route through Buffer/Postiz instead."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"mutation CreatePost($channelId: ChannelId!, $text: String!, $assets: [AssetInput!]!) { createPost(input: { channelId: $channelId, text: $text, assets: $assets, mode: shareNow, needsApproval: false, schedulingType: automatic, metadata: { facebook: { type: post } } }) { __typename } }\",\n  \"variables\": {\n    \"channelId\": \"YOUR_FACEBOOK_CHANNEL_ID\",\n    \"text\": \"{{ $json.fields.Caption }}\",\n    \"assets\": [\n      { \"image\": { \"url\": \"{{ $json.fields['Image URL'] }}\" } }\n    ]\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -304,
+        192
+      ],
+      "id": "f85831ad-4332-444a-a258-c2ef6178d854",
+      "name": "Post to Facebook",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"mutation CreatePost($channelId: ChannelId!, $text: String!) { createPost(input: { channelId: $channelId, text: $text, assets: [], mode: shareNow, needsApproval: false, schedulingType: automatic }) { __typename } }\",\n  \"variables\": {\n    \"channelId\": \"YOUR_LINKEDIN_CHANNEL_ID\",\n    \"text\": \"={{ $json.fields.Caption }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -304,
+        432
+      ],
+      "id": "7ffebba6-58e7-4c24-8b56-1563bab43516",
+      "name": "Post to linkdin",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "91568775-d867-4990-98b2-399ad5dc93fa",
+              "name": "Status",
+              "value": "Posted",
+              "type": "string"
+            },
+            {
+              "id": "00afb7a5-072d-41a7-9092-f145171fe049",
+              "name": "id",
+              "value": "={{ $('Get Pending Posts').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        80
+      ],
+      "id": "5642bd57-89e2-4e9c-b2e2-f6f575862e6b",
+      "name": "Mark as Posted"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eaff479d-bda9-4de1-a788-972f4647c453",
+              "name": "Status",
+              "value": "Failed",
+              "type": "string"
+            },
+            {
+              "id": "cb27ba08-8840-4d44-bdd1-6dccd364ec68",
+              "name": "id",
+              "value": "={{ $('Get Pending Posts').item.json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        368
+      ],
+      "id": "141f58ce-61ec-4431-955c-e303899fc04b",
+      "name": "Mark as Failed"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Untitled Base",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "n8n Integration",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_TABLE_ID"
+        },
+        "filterByFormula": "{Status} = \"Pending\"",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -1504,
+        160
+      ],
+      "id": "899069a8-b7db-46c8-ae8b-44cc7182e517",
+      "name": "Get Pending Posts",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "console.log('Raw Date field:', JSON.stringify($json.fields.Date));\nconsole.log('Raw Time field:', JSON.stringify($json.fields.Time));\n\nconst dateStr = String($json.fields.Date || '').trim();\nconst timeStr = String($json.fields.Time || '').trim();\nconst combined = dateStr + 'T' + timeStr;\nconst parsedDate = new Date(combined);\n\nconsole.log('Combined string:', combined);\nconsole.log('Parsed date:', parsedDate);\nconsole.log('Is valid:', !isNaN(parsedDate.getTime()));\n\nif (!isNaN(parsedDate.getTime()) && parsedDate <= new Date()) {\n  return $input.item;\n}\n\nreturn null;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        176
+      ],
+      "id": "b5faf886-b9db-45a3-a34c-1eb32846d795",
+      "name": "Check If Due Now",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=YOUR_GEMINI_API_KEY",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Rewrite this into a polished {{ $json.fields.Platform }} post with relevant hashtags, under 200 words: {{ $json.fields.Caption }}\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -976,
+        208
+      ],
+      "id": "7c7d87f2-81a7-477e-96e5-8fb56da2de8d",
+      "name": "Generate Caption (Gemini AI)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const generatedText = $json.candidates[0].content.parts[0].text;\n\n// Escape characters that would break JSON string literals\nconst safeText = generatedText\n  .replace(/\\\\/g, '\\\\\\\\')\n  .replace(/\"/g, '\\\\\"')\n  .replace(/\\n/g, '\\\\n')\n  .replace(/\\r/g, '\\\\r');\n\nreturn {\n  ...$('Check If Due Now').item.json,\n  fields: {\n    ...$('Check If Due Now').item.json.fields,\n    Caption: safeText\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        16
+      ],
+      "id": "8b08b5d2-8424-4c3d-92b7-dc847f94ff09",
+      "name": "Extract AI Caption"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9489338f-d4bb-47cc-8475-d49c9cc4c4fe",
+              "leftValue": "=    {{ $json.data.createPost.__typename }}",
+              "rightValue": "    InvalidInputError",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "597cde77-1c4c-43e8-9862-27169a391161",
+              "leftValue": "=  {{ $json.data.createPost.__typename }}",
+              "rightValue": "    InvalidInputError",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -64,
+        192
+      ],
+      "id": "ddfaaafd-3af7-4fd8-8ae8-e86b74b7f7b0",
+      "name": "Check Post Success"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Untitled Base",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "n8n Integration",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "Success": false
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Image URL",
+              "displayName": "Image URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Error Details",
+              "displayName": "Error Details",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Success",
+              "displayName": "Success",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Response Data",
+              "displayName": "Response Data",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        192
+      ],
+      "id": "65820ed9-7d2c-42dd-a3ad-28383437d62b",
+      "name": "Update Airtable Status",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger (every 15 min)": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Platform": {
+      "main": [
+        [
+          {
+            "node": "Post to Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to Facebook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post to linkdin",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Post to Instagram": {
+      "main": [
+        [
+          {
+            "node": "Check Post Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Facebook": {
+      "main": [
+        [
+          {
+            "node": "Check Post Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to linkdin": {
+      "main": [
+        [
+          {
+            "node": "Check Post Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Posted": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Failed": {
+      "main": [
+        [
+          {
+            "node": "Update Airtable Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Posts": {
+      "main": [
+        [
+          {
+            "node": "Check If Due Now",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Due Now": {
+      "main": [
+        [
+          {
+            "node": "Generate Caption (Gemini AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Caption (Gemini AI)": {
+      "main": [
+        [
+          {
+            "node": "Extract AI Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract AI Caption": {
+      "main": [
+        [
+          {
+            "node": "Route By Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Post Success": {
+      "main": [
+        [
+          {
+            "node": "Mark as Posted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark as Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Airtable Status": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "id": "REPLACE_ON_IMPORT",
+  "tags": []
+}

@@ -100,13 +100,3 @@ Use a valid, publicly accessible image URL for image-based posts. This is only a
 └── README.md
 ```
 
-## Future Improvements
-
-- Add retry handling for temporary API failures.
-- Save detailed API errors to Airtable.
-- Add support for more platforms and media types.
-- Add notifications when a post succeeds or fails.
-
-## Author
-
-Created as an n8n workflow automation project for scheduled, AI-assisted social media posting.
